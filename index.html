@@ -1,0 +1,257 @@
+<html>
+	<head>
+		<title>dog food</title>
+		<link rel = "icon" href = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQudx87gpctKJdgDyq5DpVlb12fI3_7XgbfXw&usqp=CAU">
+		<style>
+			canvas.GameWindow {
+				margin-left : 0px;
+			}
+			div.ParameterCanvas {
+				display: flex;
+			}
+		</style>
+	</head>
+	<body>
+		<div class = ParameterCanvas>
+			<canvas width = 600 height = 600 >Sorry but the canvas is not taken by your web browser</canvas>
+			<div>
+				<h1>Param&#232tre</h1>
+				<h2>R&#233solution</h2>
+				
+				<label>largeur</label>
+				<input type="number" id = "width" value = 50></input>
+				<label>hauteur</label>
+				<input type="number" id = "height" value = 50></input>
+				<p>champ de vue</p>
+				<input type="number" id = "FOV" value = 120></input>
+				
+				<h2>RayCast</h2>
+				
+				<label>longueur</label>
+				<input type="number" id = "length" value = 6></input>
+				<label>pr&#233cision</label>
+				<input type="number" id = "precision" value = 0.1></input>
+				
+				<h2>D&#233placement</h2>
+				
+				<p>avancer : z</p>
+				<p>reculer : s</p>
+				<p>tourner la cam&#233ra vers la gauche : q</p>
+				<p>tourner la cam&#233ra vers la droite : d</p>
+				<p id = "fps"></p>
+			</div>
+		</div>
+		
+		<script>
+			window.onload = init;
+			let imageLoad = [];
+			let brown = [186,138,85]
+			let grey = [203,203,203]
+			let white = [240,240,240]
+			let black = [20,20,20]
+			let map = [[[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]],
+						[[1,brown],[1,white],[1,black],[1,white],[1,brown]],
+						[[1,brown],[1,black],[1,white],[1,black],[1,brown]],
+						[[1,brown],[1,white],[1,black],[1,white],[1,brown]],
+						[[1,brown],[1,black],[1,white],[1,black],[1,brown]]],
+					   [[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]]],
+					   [[[1,[brown]],[1,[255,255,255]],[1,[255,0,0]],[1,[255,255,255]],[1,[255,0,0]]],
+					    [[1,[brown]],0,0,0,[1,[brown]]],
+						[[1,[brown]],0,0,0,[1,[brown]]],
+						[[1,[brown]],0,0,0,[1,[brown]]],
+						[[1,[brown]],[1,brown],[1,[110,175,240]],[1,brown],[1,[brown]]]],
+					   [[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]]],
+					   [[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
+						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
+						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
+						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
+						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]]]]
+			var resolution = [document.getElementById("width").value,document.getElementById("height").value]
+			var FOV = document.getElementById("FOV").value
+			var ray_length = document.getElementById("length").value
+			var precision = document.getElementById("precision").value
+			var direction = [0,0]
+			var camera = [2,2.1,2]
+			
+			var z_press = false;
+			var s_press = false;
+			var q_press = false;
+			var d_press = false;
+			
+			//create function
+			function radians(degrees) {
+				return (Math.PI/180) * degrees
+			}
+			
+			function newFrame () {
+				window.requestAnimationFrame(gameLoop)
+			}
+			
+			function gameLoop() {
+				timeA = new Date
+				secondA = timeA.getTime()
+				
+				newWidth = document.getElementById("width").value
+				if (newWidth != null) {
+					resolution[0] = newWidth
+				}
+				newHeight = document.getElementById("height").value
+				if (newHeight != null) {
+					resolution[1] = newHeight
+				}
+				newFOV = document.getElementById("FOV").value
+				if (newFOV != null) {
+					resolution[1] = newFOV
+				}
+				
+				newLength = document.getElementById("length").value
+				if (newLength != null) {
+					ray_length = newLength
+				}
+				newPrecision = document.getElementById("precision").value
+				if (newPrecision != null) {
+					precision = newPrecision
+				}
+				
+				if (precision != 0) {
+					if (s_press==true) {
+						camera[1]-=Math.sin(radians(direction[0]))*0.1
+						camera[0]-=Math.cos(radians(direction[0]))*0.1
+					}
+					if (z_press==true) {
+						camera[1]+=Math.sin(radians(direction[0]))*0.1
+						camera[0]+=Math.cos(radians(direction[0]))*0.1
+					}
+					if (d_press==true) {
+						direction[0]+=5
+					}
+					if (q_press==true) {
+						direction[0]-=5
+					}
+					var canvas = document.querySelector('canvas');
+					var ctx = canvas.getContext('2d');
+					
+					ctx.fillStyle = 'rgb(110,175,240)';
+					ctx.fillRect(0, 0,canvas.width, canvas.height);
+					
+					var increment_angle = FOV/resolution[0]
+					var angle = FOV/-2
+					
+					var angle_z = 120/-2
+					var increment_angle_z = 90/resolution[1]
+					
+					for (var xB = 0;xB<resolution[0];xB++) {
+						var angle_z = 120/2
+						for (var yB = 0;yB<resolution[1];yB++) {
+							var canvas = document.querySelector('canvas');
+							var ctx = canvas.getContext('2d');
+							
+							var z = 0
+							var x = 0
+							var y = 0
+							
+							var z_increment = Math.sin(radians(angle_z-10))*precision
+							var y_increment = Math.sin(radians(angle+direction[0]))*precision
+							var x_increment = Math.cos(radians(angle+direction[0]))*precision
+							
+							for (var j = 0;j<ray_length/precision;j++) {
+								try {
+									if (map[Math.floor(z+camera[2])][Math.floor(y+camera[1])][Math.floor(x+camera[0])][0] == 1) {
+										color = map[Math.floor(z+camera[2])][Math.floor(y+camera[1])][Math.floor(x+camera[0])][1]
+										//for (var a = 0;a<3;a++) {
+										//	color[a] = ((j*precision)/ray_length)/color[a]
+										//}
+										ctx.fillStyle = 'rgb('+color[0]+","+color[1]+","+color[2]+")"
+										ctx.fillRect(xB*canvas.width/resolution[0],yB*canvas.height/resolution[1],canvas.width/resolution[0],canvas.height/resolution[1]);
+										break
+									}
+								}
+								catch {}
+								x+=x_increment
+								y+=y_increment
+								z+=z_increment
+							}
+							angle_z-=increment_angle_z
+						}
+						angle+=increment_angle
+					}
+				}
+				timeB = new Date
+				secondB = timeB.getTime()
+				
+				//console.log(secondB-secondA)
+				document.getElementById("fps").innerHTML = "fps : "+Math.floor(1000/(secondB-secondA))
+				if (secondB-secondA<16) {
+					setTimeout(newFrame,16)
+				}
+				else {
+					newFrame()
+				}
+			};
+			
+			//load image and initialize value
+			function init() {
+				var canvas = document.querySelector('canvas');
+				var ctx = canvas.getContext('2d');
+				ctx.imageSmoothingEnabled = false;
+				
+				document.addEventListener("keydown", function(event) {
+					if (event.keyCode == 90) {
+						z_press = true;
+					};
+					if (event.keyCode == 83) {
+						s_press = true;
+					};
+					
+					if (event.keyCode == 81) {
+						q_press = true;
+					};
+					if (event.keyCode == 68) {
+						d_press = true;
+					};
+				}
+				);
+				document.addEventListener("keyup", function(event) {
+					if (event.keyCode == 90) {
+						z_press = false;
+					};
+					if (event.keyCode == 83) {
+						s_press = false;
+					};
+					
+					if (event.keyCode == 81) {
+						q_press = false;
+					};
+					if (event.keyCode == 68) {
+						d_press = false;
+					};
+				}
+				);
+				
+				const imageToLoad = [
+					"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQudx87gpctKJdgDyq5DpVlb12fI3_7XgbfXw&usqp=CAU",
+				];
+				var totalImage = imageToLoad.length;
+				
+				for (var i = 0;i<totalImage;i++) {
+					var img = new Image();
+					img.src = imageToLoad[i];
+					imageLoad.push(img);
+					img.onload = function() {
+						if (i == totalImage) {
+							gameLoop();
+						};
+					};	
+				};
+			};
+		</script>
+	</body>
+</html>
