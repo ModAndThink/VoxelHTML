@@ -46,6 +46,7 @@
 			window.onload = init;
 			let imageLoad = [];
 			let brown = [186,138,85]
+			let dark_brown = [152,97,61]
 			let grey = [203,203,203]
 			let white = [240,240,240]
 			let black = [20,20,20]
@@ -53,23 +54,28 @@
 						[[1,brown],[1,white],[1,black],[1,white],[1,brown]],
 						[[1,brown],[1,black],[1,white],[1,black],[1,brown]],
 						[[1,brown],[1,white],[1,black],[1,white],[1,brown]],
-						[[1,brown],[1,black],[1,white],[1,black],[1,brown]]],
+						[[1,brown],[1,black],[1,white],[1,black],[1,brown]],
+						[[1,brown],[1,white],[1,black],[1,white],[1,brown]]],
 					   [[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]],
+						[[1,brown],[1,dark_brown],[1,dark_brown],[1,white],[1,brown]],
 						[[1,brown],0,0,0,[1,brown]],
 						[[1,brown],0,0,0,[1,brown]],
 						[[1,brown],0,0,0,[1,brown]],
 						[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]]],
-					   [[[1,[brown]],[1,[255,255,255]],[1,[255,0,0]],[1,[255,255,255]],[1,[255,0,0]]],
-					    [[1,[brown]],0,0,0,[1,[brown]]],
+					   [[[1,[brown]],[1,brown],[1,brown],[1,brown],[1,brown]],
+					    [[1,[brown]],0,0,[1,white],[1,[brown]]],
 						[[1,[brown]],0,0,0,[1,[brown]]],
 						[[1,[brown]],0,0,0,[1,[brown]]],
+						[[1,brown],0,0,0,[1,brown]],
 						[[1,[brown]],[1,brown],[1,[110,175,240]],[1,brown],[1,[brown]]]],
 					   [[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]],
 						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],0,[1,[255,255,0]],0,[1,brown]],
 						[[1,brown],0,0,0,[1,brown]],
 						[[1,brown],0,0,0,[1,brown]],
 						[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]]],
 					   [[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
+						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
 						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
 						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
 						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
@@ -79,7 +85,7 @@
 			var ray_length = document.getElementById("length").value
 			var precision = document.getElementById("precision").value
 			var direction = [0,0]
-			var camera = [2,2.1,2]
+			var camera = [2,4,2.3]
 			
 			var z_press = false;
 			var s_press = false;
