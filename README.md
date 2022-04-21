@@ -5,7 +5,7 @@
 
   For this moment, i'm working on the rendering of the engine. It is not usable but if you want to test it, you can ! Just go to this git hub page [here](https://modandthink.github.io/VoxelHTML/)
 
-## Wath next ?
+## What next ?
 
   I have just finish to implement a DDA algorithm and i'm starting to thinking about implementing octree.
 
