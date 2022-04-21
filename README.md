@@ -11,7 +11,7 @@
 
 ## Sources
 
-  Want to make your own voxel engine or like nerd stuff, here's some sources who can help you :
+  Want to make your own voxel engine or like nerd stuff, here's some sources wich can help you :
 
 * **Thes DDA algorithm : https://www.researchgate.net/publication/233899848_Efficient_implementation_of_the_3D-DDA_ray_traversal_algorithm_on_GPU_and_its_application_in_radiation_dose_calculation**
 * **A good video to understand DDA algorithm and math being it : https://www.youtube.com/watch?v=NbSee-XM7WA**
