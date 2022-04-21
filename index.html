@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>dog food</title>
+		<link rel = "icon" href = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQudx87gpctKJdgDyq5DpVlb12fI3_7XgbfXw&usqp=CAU">
+		<style>
+			canvas.GameWindow {
+				margin-left : 0px;
+			}
+			div.ParameterCanvas {
+				display: flex;
+			}
+		</style>
+	</head>
+	<body>
+		<div class = ParameterCanvas>
+			<canvas width = 600 height = 600 >Sorry but the canvas is not taken by your web browser</canvas>
+			<div>
+				<h1>Param&#232tre</h1>
+				<h2>R&#233solution</h2>
+				
+				<label>largeur</label>
+				<input type="number" id = "width" value = 60></input>
+				<label>hauteur</label>
+				<input type="number" id = "height" value = 60></input>
+				<p>champ de vue</p>
+				<input type="number" id = "FOV" value = 60></input>
+				
+				<h2>RayCast</h2>
+				
+				<label>longueur</label>
+				<input type="number" id = "length" value = 60></input>
+				
+				<h2>D&#233placement</h2>
+				
+				<p>avancer : z</p>
+				<p>reculer : s</p>
+				<p>tourner la cam&#233ra vers la gauche : q</p>
+				<p>tourner la cam&#233ra vers la droite : d</p>
+				<p>monter : ctrl</p>
+				<p>descendre : espace</p>
+				<p id = "fps"></p>
+				<p id = "direction"></p>
+				
+			</div>
+		</div>
+		
+		<script>
+			window.onload = init;
+			let imageLoad = [];
+			
+			var resolution = [document.getElementById("width").value,document.getElementById("height").value]
+			var FOV = document.getElementById("FOV").value
+			var ray_length = document.getElementById("length").value
+			var direction = [0,0,0]
+			var camera = [6,5,3]
+			let brown = [186,138,85]
+			let dark_brown = [152,97,61]
+			let grey = [203,203,203]
+			let white = [240,240,240]
+			let black = [20,20,20]
+			/*var map = [[[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]],
+						[[1,brown],[1,white],[1,black],[1,white],[1,brown]],
+						[[1,brown],[1,black],[1,white],[1,black],[1,brown]],
+						[[1,brown],[1,white],[1,black],[1,white],[1,brown]],
+						[[1,brown],[1,black],[1,white],[1,black],[1,brown]],
+						[[1,brown],[1,white],[1,black],[1,white],[1,brown]]],
+					   [[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]],
+						[[1,brown],[1,dark_brown],[1,dark_brown],[1,white],[1,brown]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]]],
+					   [[[1,[brown]],[1,brown],[1,brown],[1,brown],[1,brown]],
+					    [[1,[brown]],0,0,[1,white],[1,[brown]]],
+						[[1,[brown]],0,0,0,[1,[brown]]],
+						[[1,[brown]],0,0,0,[1,[brown]]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,[brown]],[1,brown],[1,[110,175,240]],[1,brown],[1,[brown]]]],
+					   [[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],0,[1,[255,255,0]],0,[1,brown]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],0,0,0,[1,brown]],
+						[[1,brown],[1,brown],[1,brown],[1,brown],[1,brown]]],
+					   [[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
+						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
+						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
+						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
+						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]],
+						[[1,grey],[1,grey],[1,grey],[1,grey],[1,grey]]]]*/
+			
+			var z_press = false;
+			var s_press = false;
+			var q_press = false;
+			var d_press = false;
+			var space_press = false
+			var ctrl_press = false
+			
+			//event
+			
+			const eventA = document.createEvent("Event")
+			eventA.initEvent("newFrame",true,true)
+			
+			//object
+			window.game =  []
+			
+			class Player {
+				constructor (x,y,z,name,parent) {
+					this.script = []
+					this.position = [x,y,z]
+					this.id = "Entity"
+					this.parent = parent
+					this.speed = 3
+					
+					parent[name] = this
+					//mouvement and gravity
+					this.velocity = 0
+					
+					function Controle () {
+						var bottom = [this.position[0],this.position[1],this.position[2]-2]
+						
+						if (s_press==true) {
+							this.position[1]-=Math.cos(radians(direction[0]))*this.speed
+							this.position[0]-=Math.sin(radians(direction[0]))*this.speed
+						}
+						if (z_press==true) {
+							this.position[1]+=Math.cos(radians(direction[0]))*this.speed
+							this.position[0]+=Math.sin(radians(direction[0]))*this.speed
+						}
+						if (d_press==true) {
+							direction[0]+=5
+						}
+						if (q_press==true) {
+							direction[0]-=5
+						}
+						if (space_press== true) {
+							this.position[2]+=1
+						}
+						if (ctrl_press == true) {
+							this.position[2]-=1
+						}
+						
+						try {
+							if (map[parseInt(bottom[2])][parseInt(bottom[1])][parseInt(bottom[0])][0] == 1) {
+								if (this.velocity < 0) {
+									this.velocity = 0
+									this.position[2] = bottom[2]+2
+								}
+							}
+							else {
+								this.velocity-=0.1
+							}
+						}
+						catch {
+							this.velocity-=0.1
+						}
+						
+						//this.position[2]+=this.velocity
+						camera = [this.position[0],this.position[1],this.position[2]]
+						
+					}
+					
+					addEventListener("newFrame",Controle.bind(this))
+				}
+			}
+			
+			//create function
+			function getRandomInt(range) {
+				return Math.floor(Math.random() * range);
+			};
+			
+			function generateMap(Xsize,Ysize,Zsize) {
+				window.map = Array(Zsize).fill().map(e => Array(Ysize).fill().map(e => Array(Xsize).fill(0).map(e => e)))
+			}
+			
+			function rectangle(Xmin,Ymin,Zmin,Xmax,Ymax,Zmax,color,variation,range) {
+				for (var z = Zmin;z<Zmax;z++) {
+					if (z >= 0 && z<map.length) {
+						for (var y = Ymin;y<Ymax;y++) {
+							if (y >= 0 && y<map[0].length) {
+								for (var x = Xmin;x<Xmax;x++) {
+									if (x >= 0 && x<map[0][0].length) {
+										if (variation == false) {
+											map[z][y][x] = [1,color]
+										}
+										else {
+											variation = [getRandomInt(range)-range/2,getRandomInt(range)-range/2,getRandomInt(range)-range/2]
+											colorA = [color[0]-variation[0],color[1]-variation[1],color[2]-variation[2]]
+											map[z][y][x] = [1,colorA]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			function deleteArea(Xmin,Ymin,Zmin,Xmax,Ymax,Zmax) {
+				for (var z = Zmin;z<Zmax;z++) {
+					if (z >= 0 && z<map.length) {
+						for (var y = Ymin;y<Ymax;y++) {
+							if (y >= 0 && y<map[0].length) {
+								for (var x = Xmin;x<Xmax;x++) {
+									if (x >= 0 && x<map[0][0].length) {
+										map[z][y][x] = 0
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			function putObject(xP,yP,zP,model) {
+				for (var zM = 0;zM<model.length;zM++) {
+					if (zM+zP>=0 && zM+zP<map.length) {
+					for (var yM = 0;yM<model[0].length;yM++) {
+						if (yM+yP>=0 && yM+yP<map[0].length) {
+						for (var xM = 0;xM<model[0][0].length;xM++) {
+							if (xM+xP>=0 && xM+xP<map.length) {
+							map[zM+zP][yM+yP][xM+xP] = model[zM][yM][xM]
+							}
+						}
+						}
+					}
+					}
+				}
+			}
+			
+			function rotateZ(x,y,z,angle) {
+				var cos = Math.cos(radians(-angle))
+				var sin = Math.sin(radians(-angle))
+				
+				var xN = x*cos - y*sin
+				var yN = y*cos + x*sin
+				
+				return [xN,yN,z]
+			}
+			function rotateX(x,y,z,angle) {
+				var cos = Math.cos(radians(-angle))
+				var sin = Math.sin(radians(-angle))
+				
+				var zN = z*cos - y*sin
+				var yN = y*cos + z*sin
+				
+				return [x,yN,zN]
+			}
+			
+			function RayDDA(Xs,Zs,d,xB,yB) {
+				var canvas = document.querySelector('canvas');
+				var ctx = canvas.getContext('2d');
+				
+				var directionVector = rotateZ(Math.round(Xs*100000000)/100000000,Math.round(d*100000000)/100000000,Math.round(Zs*100000000)/100000000,direction[0])
+				
+				var step = [0,0,0]
+				var invDir = [0,0,0]
+				var T = [0,0,0]
+				var DeltaT = [0,0,0]
+				var VoxelIncr = [0,0,0]
+				var CurrentV = [camera[0],camera[1],camera[2]]
+				
+				for (var i = 0;i<3;i++) {
+					if (directionVector[i] != 0) {
+						if (directionVector[i]<0) {
+							step[i] = -1
+						}
+						else {
+							step[i] = 1
+						}
+						invDir[i] = Math.abs(1/directionVector[i])
+						T[i] = invDir[i]
+					}
+					else {
+						invDir[i] = 100000000000000011111
+						T[i] = 111111111111111102221
+					}
+				}
+				
+				for (var i =0;i<3;i++) {
+					DeltaT[i]=invDir[i]
+				}
+				
+				/*console.log(directionVector[0],directionVector[1],directionVector[2])
+				console.log(step[0],step[1],step[2])
+				console.log(DeltaT[0],DeltaT[1],DeltaT[2])
+				
+				console.log("_____")
+				console.log(VoxelIncr[0],VoxelIncr[1],VoxelIncr[2])
+				console.log(T[0],T[1],T[2])
+				console.log(CurrentV[0],CurrentV[1],CurrentV[2])*/
+				
+				while (true) {
+					if (T[0]<=T[1] && T[0]<=T[2]) {
+						VoxelIncr[0] = 1
+					}
+					else {
+						VoxelIncr[0] = 0
+					}
+					
+					if (T[1]<=T[0] && T[1]<=T[2]) {
+						VoxelIncr[1] = 1
+					}
+					else {
+						VoxelIncr[1] = 0
+					}
+					
+					if (T[2]<=T[1] && T[2]<=T[0]) {
+						VoxelIncr[2] = 1
+					}
+					else {
+						VoxelIncr[2] = 0
+					}
+					
+					T[0]+=DeltaT[0]*VoxelIncr[0]
+					T[1]+=DeltaT[1]*VoxelIncr[1]
+					T[2]+=DeltaT[2]*VoxelIncr[2]
+					
+					CurrentV[0]+=VoxelIncr[0]*step[0]
+					CurrentV[1]+=VoxelIncr[1]*step[1]
+					CurrentV[2]+=VoxelIncr[2]*step[2]
+					
+					/*console.log("_____")
+					console.log(VoxelIncr[0],VoxelIncr[1],VoxelIncr[2])
+					console.log(T[0],T[1],T[2])
+					console.log(CurrentV[0],CurrentV[1],CurrentV[2])*/
+					
+					var rotateDir = [CurrentV[0],CurrentV[1],CurrentV[2]]
+					//rotateDir = [rotateDir[0]+camera[0],rotateDir[1]+camera[1],rotateDir[2]+camera[2]]
+					//var rotateDir = [CurrentV[0],CurrentV[1],CurrentV[2]]
+					
+					if (Math.sqrt((rotateDir[0]-parseInt(camera[0]))**2+(rotateDir[1]-parseInt(camera[1]))**2+(rotateDir[2]-parseInt(camera[2]))**2)>ray_length) {
+						break
+					}
+					if (parseInt(rotateDir[2]) < map.length && parseInt(rotateDir[1]) < map[0].length && parseInt(rotateDir[0]) < map[0][0].length && parseInt(rotateDir[2]) >= 0 && parseInt(rotateDir[1]) >= 0 && parseInt(rotateDir[0]) >= 0 && map[parseInt(rotateDir[2])][parseInt(rotateDir[1])][parseInt(rotateDir[0])][0] == 1) {
+						var color = map[parseInt(rotateDir[2])][parseInt(rotateDir[1])][parseInt(rotateDir[0])][1]
+						ctx.fillStyle = 'rgb('+color[0]+","+color[1]+","+color[2]+")"
+						ctx.fillRect(xB*canvas.width/resolution[0],yB*canvas.height/resolution[1],canvas.width/resolution[0],canvas.height/resolution[1]);
+						break
+					}
+				}
+			}
+			
+			function radians(degrees) {
+				return (Math.PI/180) * degrees
+			}
+			
+			function newFrame () {
+				window.requestAnimationFrame(gameLoop)
+			}
+			
+			function gameLoop() {
+				dispatchEvent(eventA)
+				timeA = new Date
+				secondA = timeA.getTime()
+				
+				newWidth = document.getElementById("width").value
+				if (newWidth != null) {
+					resolution[0] = newWidth
+				}
+				newHeight = document.getElementById("height").value
+				if (newHeight != null) {
+					resolution[1] = newHeight
+				}
+				newFOV = document.getElementById("FOV").value
+				if (newFOV != null) {
+					FOV = newFOV
+				}
+				
+				newLength = document.getElementById("length").value
+				if (newLength != null) {
+					ray_length = newLength
+				}
+				
+				if (FOV!=0) {
+					var canvas = document.querySelector('canvas');
+					var ctx = canvas.getContext('2d');
+					
+					ctx.fillStyle = 'rgb(110,175,240)';
+					ctx.fillRect(0, 0,canvas.width, canvas.height);
+					
+					var increment_angle = FOV/resolution[0]
+					var angle = FOV/-2
+					
+					var increment_angle_z = FOV/resolution[1]
+					
+					var distanceToScreen = Math.tan(radians(FOV/2))
+					var increment = 1/resolution[0]
+					
+					var Xs = 1/-2
+					for (var xB = 0;xB < resolution[0];xB++) {
+						var angle_z = FOV/2
+						var Zs = 1/2
+						for (var yB = 0;yB<resolution[1];yB++) {
+							/*console.log("-----------------")
+							console.log(angle,angle_z)
+							console.log("-_-_-_-_-_-")*/
+							
+							RayDDA(Xs,Zs,distanceToScreen,xB,yB)
+							
+							angle_z-=increment_angle_z
+							Zs=Zs-increment
+						}
+						angle+=increment_angle
+						Xs+=increment
+					}
+				}
+				timeB = new Date
+				secondB = timeB.getTime()
+				
+				document.getElementById("fps").innerHTML = "fps : "+Math.floor(1000/(secondB-secondA))
+				document.getElementById("direction").innerHTML = "direction : "+direction[0]
+				
+				if (secondB-secondA<16) {
+					setTimeout(newFrame,16)
+				}
+				else {
+					newFrame()
+				}
+			};
+			
+			//load image and initialize value
+			function init() {
+				var canvas = document.querySelector('canvas');
+				var ctx = canvas.getContext('2d');
+				ctx.imageSmoothingEnabled = false;
+				
+				document.addEventListener("keydown", function(event) {
+					if (event.keyCode == 90) {
+						z_press = true;
+					};
+					if (event.keyCode == 83) {
+						s_press = true;
+					};
+					if (event.keyCode == 81) {
+						q_press = true;
+					};
+					if (event.keyCode == 68) {
+						d_press = true;
+					};
+					if (event.keyCode == 32) {
+						space_press = true
+					}
+					if (event.keyCode == 17) {
+						ctrl_press = true
+					}
+				}
+				);
+				document.addEventListener("keyup", function(event) {
+					if (event.keyCode == 90) {
+						z_press = false;
+					};
+					if (event.keyCode == 83) {
+						s_press = false;
+					};
+					
+					if (event.keyCode == 81) {
+						q_press = false;
+					};
+					if (event.keyCode == 68) {
+						d_press = false;
+					};
+					if (event.keyCode == 32) {
+						space_press = false
+					}
+					if (event.keyCode == 17) {
+						ctrl_press = false
+					}
+				}
+				);
+				
+				const imageToLoad = [
+					"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQudx87gpctKJdgDyq5DpVlb12fI3_7XgbfXw&usqp=CAU",
+				];
+				var totalImage = imageToLoad.length;
+				
+				for (var i = 0;i<totalImage;i++) {
+					var img = new Image();
+					img.src = imageToLoad[i];
+					imageLoad.push(img);
+					img.onload = function() {
+						if (i == totalImage) {
+							var P = new Player(20,20,10,"p",window.game)
+							generateMap(200,200,45)
+							
+							rectangle(0,0,0,200,200,1,[20,200,0],true,20)
+							
+							rectangle(0,0,1,81,92,4,[180,180,180],true,5)
+							rectangle(0,92,1,17,124,4,[180,180,180],true,5)
+							
+							rectangle(0,0,4,2,124,28,[191,216,127],true,4)
+							rectangle(1,0,4,2,122,28,[216,216,216],true,2)
+							
+							rectangle(0,0,4,81,2,28,[191,216,127],true,4)
+							rectangle(1,1,4,80,2,28,[216,216,216],true,2)
+							
+							rectangle(79,0,4,81,92,28,[191,216,127],true,4)
+							rectangle(79,1,4,80,91,28,[216,216,216],true,2)
+							
+							rectangle(15,90,4,81,92,28,[191,216,127],true,4)
+							rectangle(15,90,4,80,91,28,[216,216,216],true,2)
+							
+							rectangle(15,92,4,17,124,28,[191,216,127],true,4)
+							rectangle(15,91,4,16,122,28,[216,216,216],true,2)
+							
+							rectangle(0,122,22,17,124,28,[191,216,127],true,4)
+							
+							rectangle(1,48,4,80,50,28,[88,71,240],true,2)
+							
+							rectangle(0,0,28,81,92,29,[200,200,200],true,8)
+							rectangle(0,92,28,17,124,29,[200,200,200],true,8)
+							
+							deleteArea(62,48,4,77,50,22)
+							
+							console.log(map)
+							gameLoop();
+						};
+					};	
+				};
+			};
+		</script>
+	</body>
+</html>
